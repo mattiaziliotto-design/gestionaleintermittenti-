@@ -1,0 +1,8 @@
+{
+  "name": "Compilatore Comunicazioni Intermittenti",
+  "description": "Compilazione automatica e raggruppata del modello ministeriale per Comunicazioni Obbligatorie Intermittenti in formato PDF. Supporta copia-incolla diretto da Excel, caricamento file xlsx e download massivo singolo o cumulativo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
