@@ -98,21 +98,17 @@ export default function App() {
     if (payload) {
       const email = payload.email?.toLowerCase();
       
-      // Controllo whitelist con fallbacks hardcoded e auto-approvazione dominio bertifood.it
+      // Controllo whitelist (da variabile d'ambiente VITE_ALLOWED_EMAILS) e auto-approvazione dominio bertifood.it
       const allowedEmailsEnv = import.meta.env.VITE_ALLOWED_EMAILS;
-      const fallbackAllowedList = [
-        "mattia.ziliotto@bertifood.it",
-        "bertifoodsrl@gmail.com",
-        "ivan.molinari@bertifood.it",
-        "ricercasviluppo@bertifood.it"
-      ];
-      
-      let allowedList = [...fallbackAllowedList];
+
+      let allowedList: string[] = [];
       if (allowedEmailsEnv) {
         // Rimuove eventuali virgolette all'inizio/fine o all'interno di ciascuna email
         const cleanedEnv = allowedEmailsEnv.replace(/^['"]|['"]$/g, '');
-        const envList = cleanedEnv.split(',').map((e: string) => e.replace(/['"]/g, '').trim().toLowerCase());
-        allowedList = Array.from(new Set([...allowedList, ...envList]));
+        allowedList = cleanedEnv
+          .split(',')
+          .map((e: string) => e.replace(/['"]/g, '').trim().toLowerCase())
+          .filter(Boolean);
       }
 
       // Consente l'accesso a tutte le email @bertifood.it o a quelle presenti nella whitelist
@@ -321,8 +317,9 @@ export default function App() {
         const nominativo = cleanParts[1];
         const giorno = cleanParts[2] || '';
         
-        // Salta intestazioni se presenti
-        if (cf.toUpperCase().includes('CODICE FISCALE') || cf.toUpperCase().includes('CF') || cf.toUpperCase().includes('CODICE_FISCALE')) {
+        // Salta intestazioni se presenti (confronto esatto: un CF reale può contenere la sequenza "CF")
+        const cfUpper = cf.toUpperCase();
+        if (cfUpper === 'CF' || cfUpper.startsWith('CODICE FISCALE') || cfUpper.startsWith('CODICE_FISCALE')) {
           return;
         }
         
@@ -397,7 +394,7 @@ export default function App() {
         } else {
           setRawRows(rows);
           // Auto-elabora se abbiamo caricato un file
-          elaboraDati(rows);
+          avvisaRigheNonRiconosciute(elaboraDati(rows));
         }
       } catch (err) {
         console.error(err);
@@ -446,12 +443,14 @@ export default function App() {
       return;
     }
     setRawRows(rows);
-    elaboraDati(rows);
+    avvisaRigheNonRiconosciute(elaboraDati(rows));
   };
 
-  const elaboraDati = (rows: InputRow[]) => {
+  // Restituisce le righe il cui giorno non è stato riconosciuto (es. vuoto, data, testo libero)
+  const elaboraDati = (rows: InputRow[]): InputRow[] => {
     const groups: Record<string, { nominativo: string; prestazioni: { giorno: string; data: string }[] }> = {};
-    
+    const righeNonRiconosciute: InputRow[] = [];
+
     rows.forEach(row => {
       const cf = row.codiceFiscale.toUpperCase().trim();
       if (!cf) return;
@@ -475,6 +474,8 @@ export default function App() {
             data: dataCalcolata
           });
         }
+      } else {
+        righeNonRiconosciute.push(row);
       }
     });
 
@@ -500,6 +501,23 @@ export default function App() {
     // Pulisce l'anteprima corrente
     setPreviewPdfUrl(null);
     setSelectedLavoratorePreview(null);
+
+    return righeNonRiconosciute;
+  };
+
+  // Avvisa l'utente delle righe scartate perché il giorno non è stato riconosciuto
+  const avvisaRigheNonRiconosciute = (righe: InputRow[]) => {
+    if (righe.length === 0) return;
+    const elenco = righe
+      .slice(0, 15)
+      .map(r => `• ${r.nominativo} (${r.codiceFiscale}): "${r.giornoLavoro || 'vuoto'}"${r.rigaOriginale ? ` – riga ${r.rigaOriginale}` : ''}`)
+      .join('\n');
+    const altre = righe.length > 15 ? `\n…e altre ${righe.length - 15}` : '';
+    alert(
+      `Attenzione: ${righe.length} prestazioni NON sono state inserite perché il giorno non è stato riconosciuto ` +
+      `(valori ammessi: LUN, MAR, MER, GIO, VEN, SAB, DOM).\n\n${elenco}${altre}\n\n` +
+      `Correggi i dati di origine oppure aggiungi le prestazioni con "Modifica".`
+    );
   };
 
   // Rigenera l'elaborazione se cambia la data della settimana
