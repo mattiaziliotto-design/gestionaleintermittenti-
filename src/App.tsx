@@ -39,6 +39,23 @@ function parseJwt(token: string): any {
 }
 
 
+// Converte "YYYY-MM-DD" in una Date a mezzanotte locale
+// (new Date("YYYY-MM-DD") la interpreterebbe in UTC, spostando il giorno in alcuni fusi/orari)
+function parseISODateLocal(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+// Restituisce il lunedì della settimana di una data, come "YYYY-MM-DD" in ora locale
+// (toISOString() userebbe UTC: dopo mezzanotte in Italia restituirebbe il giorno prima)
+function getMondayISO(date: Date): string {
+  const day = date.getDay();
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate() - day + (day === 0 ? -6 : 1));
+  const mm = String(monday.getMonth() + 1).padStart(2, '0');
+  const dd = String(monday.getDate()).padStart(2, '0');
+  return `${monday.getFullYear()}-${mm}-${dd}`;
+}
+
 // Valori predefiniti dall'immagine del modulo ministeriale allegata
 const DEFAULT_EMPLOYER: EmployerConfig = {
   codiceFiscale: "05024410267",
@@ -195,14 +212,8 @@ export default function App() {
 
 
   // Data della settimana di riferimento (Lunedì)
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    // Di default, imposta il lunedì della settimana corrente
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(today.setDate(diff));
-    return monday.toISOString().split('T')[0]; // YYYY-MM-DD
-  });
+  // Di default, imposta il lunedì della settimana corrente (YYYY-MM-DD)
+  const [selectedDate, setSelectedDate] = useState<string>(() => getMondayISO(new Date()));
 
   // Metodi di input dei dati
   const [inputMethod, setInputMethod] = useState<'paste' | 'upload'>('paste');
@@ -248,7 +259,7 @@ export default function App() {
   }, [employer]);
 
   // Calcolo del lunedì e delle date della settimana
-  const mondayDate = new Date(selectedDate);
+  const mondayDate = parseISODateLocal(selectedDate);
   
   const getWeekDays = () => {
     const days = ['LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB', 'DOM'];
@@ -520,11 +531,14 @@ export default function App() {
     );
   };
 
-  // Rigenera l'elaborazione se cambia la data della settimana
+  // Se cambia la settimana, ricalcola le date dei lavoratori già elaborati a partire dal giorno.
+  // Si lavora sull'elenco corrente (non sulle righe grezze) per non perdere modifiche e rimozioni manuali.
   useEffect(() => {
-    if (rawRows.length > 0) {
-      elaboraDati(rawRows);
-    }
+    setLavoratoriElaborati(prev => prev.map(lav => ({
+      ...lav,
+      prestazioni: lav.prestazioni.map(p => ({ ...p, data: getDateForDay(p.giorno) }))
+    })));
+    handleClosePreview();
   }, [selectedDate]);
 
   // Aggiorna l'anteprima PDF in tempo reale per un lavoratore selezionato
@@ -1057,12 +1071,9 @@ export default function App() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => {
-                    // Calcola il lunedì di quella data
-                    const d = new Date(e.target.value);
-                    const day = d.getDay();
-                    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-                    const monday = new Date(d.setDate(diff));
-                    setSelectedDate(monday.toISOString().split('T')[0]);
+                    // Calcola il lunedì di quella data (ignora il campo svuotato)
+                    if (!e.target.value) return;
+                    setSelectedDate(getMondayISO(parseISODateLocal(e.target.value)));
                   }}
                   className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
                 />
@@ -1161,10 +1172,7 @@ export default function App() {
                       </div>
                     ) : (
                       storico.map((item) => {
-                        const lunDate = new Date(item.selectedDate);
-                        const dayOff = lunDate.getDay();
-                        const diff = lunDate.getDate() - dayOff + (dayOff === 0 ? -6 : 1);
-                        const monday = new Date(lunDate.setDate(diff));
+                        const monday = parseISODateLocal(getMondayISO(parseISODateLocal(item.selectedDate)));
                         const dd = String(monday.getDate()).padStart(2, '0');
                         const mm = String(monday.getMonth() + 1).padStart(2, '0');
                         const formattedMonday = `${dd}/${mm}/${monday.getFullYear()}`;
