@@ -1,20 +1,20 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Compilatore Comunicazioni Intermittenti
 
-# Run and deploy your AI Studio app
+Compila automaticamente il modello ministeriale "Comunicazione Obbligatoria Intermittenti" in PDF,
+a partire da un elenco di lavoratori (copia-incolla da Excel o file .xlsx/.csv).
 
-This contains everything you need to run your app locally.
+## Avvio in locale
 
-View your app in AI Studio: https://ai.studio/apps/8da8c45c-d76e-4dd1-a695-d0eaae1d8eb4
+**Prerequisiti:** Node.js
 
-## Run Locally
+1. Installa le dipendenze: `npm install`
+2. Copia `.env.example` in `.env.local` e compila:
+   - `VITE_GOOGLE_CLIENT_ID`: Client ID OAuth di Google
+   - `VITE_ALLOWED_EMAILS`: email autorizzate oltre al dominio `@bertifood.it`, separate da virgola
+3. Avvia: `npm run dev`
 
-**Prerequisites:**  Node.js
+## Struttura
 
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- `src/App.tsx`: interfaccia e logica di elaborazione
+- `src/utils/pdfGenerator.ts`: generazione del PDF del modello
+- `src/types.ts`: tipi condivisi
