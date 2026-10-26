@@ -8,7 +8,7 @@ import {
   CalendarDays, FileSpreadsheet, UploadCloud, Info, AlertTriangle, 
   Eye, CheckCircle2, RotateCcw, HelpCircle, FileCheck, RefreshCw,
   History, Save, FolderOpen, FileDown, FileUp, Archive,
-  LogIn, LogOut, Lock, ShieldCheck, Mail, Laptop, ExternalLink, ShieldAlert
+  LogIn, LogOut, Lock, ShieldCheck, Mail, Laptop, ShieldAlert
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -94,13 +94,6 @@ export default function App() {
 
   // Stato errore autenticazione
   const [authError, setAuthError] = useState<string | null>(null);
-
-  // Stato per rilevare se l'app è in un iframe (anteprima integrata di AI Studio)
-  const [isIframe, setIsIframe] = useState(false);
-
-  useEffect(() => {
-    setIsIframe(window.self !== window.top);
-  }, []);
 
   // Stato datore di lavoro
   const [employer, setEmployer] = useState<EmployerConfig>(() => {
@@ -899,32 +892,6 @@ export default function App() {
                     <p className="text-xs text-red-700 leading-relaxed">
                       {authError}
                     </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Rilevamento Frame Integrato (COOP Iframe Warning) */}
-              {isIframe && (
-                <div className="bg-blue-50 border border-blue-200/60 rounded-2xl p-4 flex gap-3 text-left">
-                  <div className="text-blue-600 shrink-0">
-                    <ExternalLink className="w-5 h-5 mt-0.5" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="font-bold text-xs text-blue-800 uppercase tracking-wider">
-                      Anteprima integrata rilevata
-                    </div>
-                    <p className="text-xs text-blue-700 leading-relaxed">
-                      L'accesso con Google viene bloccato dal browser per motivi di sicurezza (COOP) all'interno dell'anteprima integrata di AI Studio.
-                    </p>
-                    <a 
-                      href={window.location.href} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-3.5 rounded-xl shadow-md transition-all cursor-pointer mt-1"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      Apri in una nuova scheda
-                    </a>
                   </div>
                 </div>
               )}
