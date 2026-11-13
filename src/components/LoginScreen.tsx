@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ExternalLink, Lock, ShieldAlert } from 'lucide-react';
+import { Lock, ShieldAlert } from 'lucide-react';
 import { motion } from 'motion/react';
 import { UserSession } from '../types';
 import { GOOGLE_CLIENT_ID, sessionFromCredential } from '../utils/auth';
@@ -20,8 +20,6 @@ interface LoginScreenProps {
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [authError, setAuthError] = useState<string | null>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
-  // L'accesso con Google non funziona dentro un iframe (es. anteprime integrate)
-  const isIframe = window.self !== window.top;
 
   // Caricamento dello script Google Identity Services e rendering del pulsante
   useEffect(() => {
@@ -101,27 +99,6 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                 <div className="space-y-1">
                   <div className="font-bold text-xs text-red-800 uppercase tracking-wider">Accesso Negato</div>
                   <p className="text-xs text-red-700 leading-relaxed">{authError}</p>
-                </div>
-              </div>
-            )}
-
-            {isIframe && (
-              <div className="bg-blue-50 border border-blue-200/60 rounded-2xl p-4 flex gap-3 text-left">
-                <ExternalLink className="w-5 h-5 mt-0.5 text-blue-600 shrink-0" />
-                <div className="space-y-2">
-                  <div className="font-bold text-xs text-blue-800 uppercase tracking-wider">Anteprima integrata rilevata</div>
-                  <p className="text-xs text-blue-700 leading-relaxed">
-                    L'accesso con Google viene bloccato dal browser per motivi di sicurezza all'interno di un'anteprima integrata.
-                  </p>
-                  <a
-                    href={window.location.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-3.5 rounded-xl shadow-md transition-all cursor-pointer mt-1"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Apri in una nuova scheda
-                  </a>
                 </div>
               </div>
             )}

@@ -8,7 +8,6 @@ import { restoreSession } from './utils/auth';
 import { isCodiceFiscaleValido } from './utils/codiceFiscale';
 import { formatDateIT, getMondayISO, getWeekDays, parseISODateLocal } from './utils/dates';
 import { downloadBlob, safeFileName } from './utils/download';
-import { RIGHE_PER_MODULO, righeDaLavoratori } from './utils/intervalli';
 import { creaPdfUnico } from './utils/modello';
 import { parsePastedData, parseSheetRows, raggruppaLavoratori, riallineaPrestazioni } from './utils/parsing';
 import { clearSession, loadEmployer, loadStorico, sanitizeStorico, saveEmployer, saveSession, saveStorico } from './utils/storage';
@@ -55,13 +54,20 @@ export default function App() {
   const [saveTitle, setSaveTitle] = useState<string | null>(null);
 
   const weekDays = getWeekDays(selectedDate);
-  // Righe da comunicare e moduli ministeriali necessari (10 righe per modulo)
-  const numRighe = righeDaLavoratori(lavoratori).length;
-  const numModuli = Math.ceil(numRighe / RIGHE_PER_MODULO);
 
   useEffect(() => {
     saveEmployer(employer);
   }, [employer]);
+
+  // Chiude la sessione alla scadenza anche se la pagina resta aperta
+  const isLoggedIn = session !== null;
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const timer = setInterval(() => {
+      if (!restoreSession()) setSession(null);
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [isLoggedIn]);
 
   // Rilascia l'Object URL dell'anteprima quando viene sostituito o chiuso
   const previewUrl = preview?.url ?? null;
@@ -515,9 +521,7 @@ export default function App() {
                   <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Elaborazione Completata Con Successo</h3>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
                     Trovati <strong>{lavoratori.length} lavoratori</strong> distinti con turni attivi nella settimana selezionata.
-                    {numRighe > 0 && (
-                      <> Il PDF unico contiene <strong>{numRighe} righe</strong> in <strong>{numModuli} {numModuli === 1 ? 'modulo' : 'moduli'}</strong> ministeriali (10 righe per modulo).</>
-                    )}
+                    {lavoratori.length > 0 && <> Ogni lavoratore ha il proprio modulo ministeriale, sia nel PDF unico sia nello ZIP.</>}
                   </p>
                 </div>
               </div>
