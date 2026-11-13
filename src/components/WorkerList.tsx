@@ -58,7 +58,7 @@ export default function WorkerList({ lavoratori, previewCf, onPreview, onEdit, o
               </div>
 
               <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Nel PDF (giorni consecutivi uniti):</span>
+                <span className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Righe nel modulo (giorni consecutivi uniti):</span>
                 <div className="flex flex-wrap gap-1">
                   {getIntervalliLavorativi(lav.prestazioni).map(interv => (
                     <span

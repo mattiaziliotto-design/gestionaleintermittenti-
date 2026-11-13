@@ -1,9 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { PDFDocument, PDFTextField } from 'pdf-lib';
 import { describe, expect, it } from 'vitest';
 import { isCodiceFiscaleValido } from '../codiceFiscale';
 import { dateForGiorno, getMondayISO, normalizeGiorno, parseISODateLocal } from '../dates';
 import { getIntervalliLavorativi } from '../intervalli';
 import { parsePastedData, parseSheetRows, raggruppaLavoratori, riallineaPrestazioni } from '../parsing';
-import { generateCombinedIntermittentiPdf, generateIntermittentePdf } from '../pdfGenerator';
+import { generaPdfUnico } from '../pdfGenerator';
 import { sanitizeStorico } from '../storage';
 
 const LUNEDI = '2026-11-09';
@@ -142,21 +144,46 @@ describe('storico', () => {
   });
 });
 
-describe('PDF', () => {
-  const employer = { codiceFiscale: '05024410267', email: 'a@b.it' };
-  const prestazioni = [{ giorno: 'SAB', data: '14/11/2026' }];
+describe('PDF sul modello ministeriale', () => {
+  const modello = new Uint8Array(readFileSync(new URL('../../assets/modello-uni-intermittente.pdf', import.meta.url)));
+  const employer = { codiceFiscale: '05024410267', email: 'prova@example.it' };
+  const lavoratore = (n: number) => ({
+    codiceFiscale: `CF${String(n).padStart(14, '0')}`,
+    nominativo: `Lavoratore ${n}`,
+    prestazioni: [{ giorno: 'SAB', data: '14/11/2026' }, { giorno: 'DOM', data: '15/11/2026' }],
+  });
+  const valori = async (bytes: Uint8Array) => {
+    const doc = await PDFDocument.load(bytes);
+    const campi = new Map(doc.getForm().getFields().map(f => [f.getName(), f instanceof PDFTextField ? f.getText() ?? '' : '']));
+    return { pagine: doc.getPageCount(), campi };
+  };
+  const P = 'moduloIntermittenti[0].Campi[0].';
 
-  it('genera il modulo anche con nomi fuori dall\'alfabeto occidentale', async () => {
-    for (const nominativo of ['MARIO ROSSI', 'ŞTEFAN POPESCU', 'Łukasz Kowalski', 'IVAN ПЕТРОВ', 'José Müller']) {
-      const bytes = await generateIntermittentePdf(employer, { codiceFiscale: 'RSSMRA80A01F205X', nominativo, prestazioni });
-      expect(bytes.length).toBeGreaterThan(1000);
-    }
+  it('compila datore di lavoro e righe nei campi ufficiali', async () => {
+    const { pagine, campi } = await valori(await generaPdfUnico(modello, employer, [lavoratore(1), lavoratore(2)]));
+    expect(pagine).toBe(1);
+    expect(campi.get(`${P}CFdatorelavoro[0]`)).toBe('05024410267');
+    expect(campi.get(`${P}EMmail[0]`)).toBe('prova@example.it');
+    expect(campi.get(`${P}Table1[0].Row2[0].CFlavoratore2[0]`)).toBe('CF00000000000002');
+    expect(campi.get(`${P}Table1[0].Row2[0].DTdatainizio2[0]`)).toBe('14/11/2026');
+    expect(campi.get(`${P}Table1[0].Row2[0].DTdatafine2[0]`)).toBe('15/11/2026');
+    expect(campi.get(`${P}Table1[0].Row2[0].CCcodcomunicazione2[0]`)).toBe('');
+    expect(campi.get(`${P}Table1[0].Row3[0].CFlavoratore3[0]`)).toBe('');
   });
 
-  it('crea una pagina per lavoratore nel PDF unico', async () => {
-    const { PDFDocument } = await import('pdf-lib');
-    const lavoratori = ['A', 'B', 'C'].map(n => ({ codiceFiscale: n, nominativo: n, prestazioni }));
-    const doc = await PDFDocument.load(await generateCombinedIntermittentiPdf(employer, lavoratori));
-    expect(doc.getPageCount()).toBe(3);
+  it('apre un nuovo modulo ogni 10 righe senza mescolare i valori', async () => {
+    const lavoratori = Array.from({ length: 23 }, (_, i) => lavoratore(i + 1));
+    const { pagine, campi } = await valori(await generaPdfUnico(modello, employer, lavoratori));
+    expect(pagine).toBe(3);
+    expect(campi.get(`${P}Table1[0].Row1[0].CFlavoratore1[0]`)).toBe('CF00000000000001');
+    expect(campi.get(`${P}Table1[0].Row1[0].CFlavoratore1[0]#2`)).toBe('CF00000000000011');
+    expect(campi.get(`${P}Table1[0].Row3[0].CFlavoratore3[0]#3`)).toBe('CF00000000000023');
+    expect(campi.get(`${P}Table1[0].Row4[0].CFlavoratore4[0]#3`)).toBe('');
+    expect(campi.get(`${P}CFdatorelavoro[0]#3`)).toBe('05024410267');
+  });
+
+  it('non va in errore con caratteri fuori dall\'alfabeto occidentale', async () => {
+    const { campi } = await valori(await generaPdfUnico(modello, { codiceFiscale: '05024410267', email: 'ştefan@example.it' }, [lavoratore(1)]));
+    expect(campi.get(`${P}EMmail[0]`)).toBe('stefan@example.it');
   });
 });

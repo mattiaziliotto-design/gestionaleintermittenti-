@@ -38,7 +38,7 @@ export default function PreviewPanel({ url, loading, onClose }: PreviewPanelProp
             </div>
             <p className="text-xs font-bold text-slate-600">Nessuna anteprima attiva</p>
             <p className="text-[11px] leading-relaxed">
-              Clicca sul tasto <strong>"Anteprima"</strong> accanto a un dipendente nella lista per vedere come apparirà il suo modulo ministeriale pronto.
+              Clicca sul tasto <strong>"Anteprima"</strong> accanto a un dipendente nella lista per vedere il modulo ministeriale compilato con le sue sole righe.
             </p>
           </div>
         )}

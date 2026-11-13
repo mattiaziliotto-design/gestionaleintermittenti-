@@ -22,6 +22,16 @@ L'applicazione funziona interamente nel browser: non ha un server né un databas
 - `npm run build`: build di produzione
 - `npm run preview`: serve la build con le stesse intestazioni di sicurezza di produzione
 
+## Modulo PDF
+
+I PDF sono compilati sul modello ministeriale UNI-Intermittente (ML-15-01), conservato in
+`src/assets/modello-uni-intermittente.pdf`: l'app ne riempie i campi (datore di lavoro e fino a
+10 righe per modulo) lasciandoli modificabili. Se il Ministero pubblica una nuova versione del
+modello basta sostituire quel file, purché i nomi dei campi restino gli stessi.
+
+- **PDF unico**: tutte le righe, un modulo (pagina) ogni 10 righe.
+- **ZIP**: un modulo separato per ciascun lavoratore.
+
 ## Dati salvati
 
 Storico delle elaborazioni, dati del datore di lavoro e sessione sono salvati nel `localStorage`
@@ -41,4 +51,5 @@ computer o browser diversi: per conservarli o trasferirli si usa "Esporta Backup
 - `src/App.tsx`: stato dell'applicazione e pagina principale
 - `src/components/`: schermata di accesso, inserimento dati, elenco lavoratori, modifica, anteprima, storico
 - `src/utils/`: logica senza interfaccia (date, codice fiscale, lettura dati, intervalli, storico, accesso, PDF)
+- `src/assets/`: modello ministeriale in PDF
 - `src/types.ts`: tipi condivisi

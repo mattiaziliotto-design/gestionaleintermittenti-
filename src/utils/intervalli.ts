@@ -1,4 +1,4 @@
-import { Prestazione } from '../types';
+import { LavoratoreRaggruppato, Prestazione } from '../types';
 import { parseDateIT } from './dates';
 
 export interface IntervalloLavorativo {
@@ -32,4 +32,24 @@ export function getIntervalliLavorativi(prestazioni: Prestazione[]): IntervalloL
     }
   }
   return intervalli;
+}
+
+// Il modello ministeriale UNI-Intermittente (ML-15-01) prevede 10 righe per modulo
+export const RIGHE_PER_MODULO = 10;
+
+export interface RigaModulo {
+  codiceFiscale: string;
+  dataInizio: string; // "DD/MM/YYYY"
+  dataFine: string; // "DD/MM/YYYY"
+}
+
+// Una riga del modulo per ogni periodo di giorni consecutivi di ciascun lavoratore
+export function righeDaLavoratori(lavoratori: LavoratoreRaggruppato[]): RigaModulo[] {
+  return lavoratori.flatMap(lav =>
+    getIntervalliLavorativi(lav.prestazioni).map(({ dataInizio, dataFine }) => ({
+      codiceFiscale: lav.codiceFiscale.toUpperCase(),
+      dataInizio,
+      dataFine,
+    }))
+  );
 }

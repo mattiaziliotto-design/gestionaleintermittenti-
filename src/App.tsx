@@ -8,6 +8,8 @@ import { restoreSession } from './utils/auth';
 import { isCodiceFiscaleValido } from './utils/codiceFiscale';
 import { formatDateIT, getMondayISO, getWeekDays, parseISODateLocal } from './utils/dates';
 import { downloadBlob, safeFileName } from './utils/download';
+import { RIGHE_PER_MODULO, righeDaLavoratori } from './utils/intervalli';
+import { creaPdfUnico } from './utils/modello';
 import { parsePastedData, parseSheetRows, raggruppaLavoratori, riallineaPrestazioni } from './utils/parsing';
 import { clearSession, loadEmployer, loadStorico, sanitizeStorico, saveEmployer, saveSession, saveStorico } from './utils/storage';
 import DataInput from './components/DataInput';
@@ -18,8 +20,6 @@ import PreviewPanel from './components/PreviewPanel';
 import StoricoPanel from './components/StoricoPanel';
 import WorkerList from './components/WorkerList';
 
-// Le librerie pesanti (PDF, ZIP, Excel) vengono scaricate solo al primo utilizzo
-const loadPdfGenerator = () => import('./utils/pdfGenerator');
 
 const inputClass =
   'w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono';
@@ -55,6 +55,9 @@ export default function App() {
   const [saveTitle, setSaveTitle] = useState<string | null>(null);
 
   const weekDays = getWeekDays(selectedDate);
+  // Righe da comunicare e moduli ministeriali necessari (10 righe per modulo)
+  const numRighe = righeDaLavoratori(lavoratori).length;
+  const numModuli = Math.ceil(numRighe / RIGHE_PER_MODULO);
 
   useEffect(() => {
     saveEmployer(employer);
@@ -92,8 +95,7 @@ export default function App() {
     setPreview({ cf: lav.codiceFiscale, url: null });
     setIsPreviewLoading(true);
     try {
-      const { generateIntermittentePdf } = await loadPdfGenerator();
-      const pdfBytes = await generateIntermittentePdf(employer, lav);
+      const pdfBytes = await creaPdfUnico(employer, [lav]);
       if (request !== previewRequest.current) return;
       const url = URL.createObjectURL(new Blob([pdfBytes as BlobPart], { type: 'application/pdf' }));
       setPreview({ cf: lav.codiceFiscale, url });
@@ -203,20 +205,19 @@ export default function App() {
 
   const handleDownloadCombined = () =>
     runGeneration('Si è verificato un errore durante la generazione del PDF unico.', async () => {
-      const { generateCombinedIntermittentiPdf } = await loadPdfGenerator();
       setProgress(50);
-      const bytes = await generateCombinedIntermittentiPdf(employer, lavoratori);
+      const bytes = await creaPdfUnico(employer, lavoratori);
       downloadBlob(bytes, `Comunicazioni_Intermittenti_Unico_${selectedDate}.pdf`, 'application/pdf');
     });
 
   const handleDownloadZip = () =>
     runGeneration('Si è verificato un errore durante la creazione dello ZIP.', async () => {
-      const [{ generateIntermittentePdf }, { default: JSZip }] = await Promise.all([loadPdfGenerator(), import('jszip')]);
+      const { default: JSZip } = await import('jszip');
       const zip = new JSZip();
       for (let i = 0; i < lavoratori.length; i++) {
         const lav = lavoratori[i];
         const fileName = `Comunicazione_Intermittente_${safeFileName(lav.nominativo)}_${safeFileName(lav.codiceFiscale)}.pdf`;
-        zip.file(fileName, await generateIntermittentePdf(employer, lav));
+        zip.file(fileName, await creaPdfUnico(employer, [lav]));
         setProgress(5 + Math.round(((i + 1) / lavoratori.length) * 80));
       }
       downloadBlob(await zip.generateAsync({ type: 'blob' }), `Comunicazioni_Intermittenti_Singoli_${selectedDate}.zip`, 'application/zip');
@@ -224,8 +225,7 @@ export default function App() {
 
   const handleDownloadStoricoPdf = async (elab: ElaborazioneStorica) => {
     try {
-      const { generateCombinedIntermittentiPdf } = await loadPdfGenerator();
-      const bytes = await generateCombinedIntermittentiPdf(elab.employer, elab.lavoratoriElaborati);
+      const bytes = await creaPdfUnico(elab.employer, elab.lavoratoriElaborati);
       downloadBlob(bytes, `Comunicazioni_Intermittenti_Unico_${elab.selectedDate}.pdf`, 'application/pdf');
     } catch (err) {
       console.error(err);
@@ -515,6 +515,9 @@ export default function App() {
                   <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Elaborazione Completata Con Successo</h3>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
                     Trovati <strong>{lavoratori.length} lavoratori</strong> distinti con turni attivi nella settimana selezionata.
+                    {numRighe > 0 && (
+                      <> Il PDF unico contiene <strong>{numRighe} righe</strong> in <strong>{numModuli} {numModuli === 1 ? 'modulo' : 'moduli'}</strong> ministeriali (10 righe per modulo).</>
+                    )}
                   </p>
                 </div>
               </div>
