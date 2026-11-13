@@ -9,8 +9,12 @@ const KEY_SESSION = 'interm_user_session';
 // Valori predefiniti del datore di lavoro
 export const DEFAULT_EMPLOYER: EmployerConfig = {
   codiceFiscale: '05024410267',
-  email: 'bertifoodsrl@gmail.com',
+  email: 'accounting@gmail.com',
 };
+
+// Email predefinita delle versioni precedenti: nei browser in cui è rimasta salvata senza
+// essere mai stata modificata viene sostituita con quella attuale
+const EMAIL_PREDEFINITA_PRECEDENTE = 'bertifoodsrl@gmail.com';
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const str = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback);
@@ -124,7 +128,12 @@ export function loadStorico(): ElaborazioneStorica[] {
   return storico ?? [];
 }
 
-export const loadEmployer = (): EmployerConfig => sanitizeEmployer(readJson(KEY_EMPLOYER));
+export function loadEmployer(): EmployerConfig {
+  const employer = sanitizeEmployer(readJson(KEY_EMPLOYER));
+  return employer.email.trim().toLowerCase() === EMAIL_PREDEFINITA_PRECEDENTE
+    ? { ...employer, email: DEFAULT_EMPLOYER.email }
+    : employer;
+}
 export const saveEmployer = (employer: EmployerConfig): boolean => writeJson(KEY_EMPLOYER, employer);
 
 export const saveStorico = (storico: ElaborazioneStorica[]): boolean => writeJson(KEY_STORICO, storico);

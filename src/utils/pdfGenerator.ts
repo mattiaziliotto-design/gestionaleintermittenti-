@@ -53,11 +53,13 @@ function suddividi(righe: RigaModulo[]): RigaModulo[][] {
   return gruppi.length > 0 ? gruppi : [[]];
 }
 
-// Genera un unico PDF con tutti i moduli necessari, una pagina ogni 10 righe.
+// Genera un unico PDF con un modulo ministeriale (pagina) per ciascun lavoratore.
 // Dalla seconda pagina i campi ricevono un suffisso: in un PDF due campi con lo stesso nome
 // condividerebbero il valore, e ogni pagina mostrerebbe le righe della prima.
 export async function generaPdfUnico(modello: Uint8Array, employer: EmployerConfig, lavoratori: LavoratoreRaggruppato[]): Promise<Uint8Array> {
-  const [prime, ...altre] = suddividi(righeDaLavoratori(lavoratori));
+  // Un lavoratore con più di 10 periodi occuperebbe più moduli consecutivi
+  const gruppi = lavoratori.flatMap(lav => suddividi(righeDaLavoratori([lav])));
+  const [prime = [], ...altre] = gruppi;
   const doc = await compilaModulo(modello, employer, prime);
   const campi = doc.catalog.lookup(PDFName.of('AcroForm'), PDFDict).lookup(PDFName.of('Fields'), PDFArray);
 

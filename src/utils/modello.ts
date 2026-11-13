@@ -20,7 +20,7 @@ function caricaModello(): Promise<Uint8Array> {
 
 const generatore = () => import('./pdfGenerator');
 
-// Un unico PDF con tutti i moduli (una pagina ogni 10 righe)
+// Un unico PDF con un modulo ministeriale (pagina) per ciascun lavoratore
 export async function creaPdfUnico(employer: EmployerConfig, lavoratori: LavoratoreRaggruppato[]): Promise<Uint8Array> {
   const [bytes, { generaPdfUnico }] = await Promise.all([caricaModello(), generatore()]);
   return generaPdfUnico(bytes, employer, lavoratori);

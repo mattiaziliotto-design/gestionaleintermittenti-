@@ -29,8 +29,10 @@ I PDF sono compilati sul modello ministeriale UNI-Intermittente (ML-15-01), cons
 10 righe per modulo) lasciandoli modificabili. Se il Ministero pubblica una nuova versione del
 modello basta sostituire quel file, purché i nomi dei campi restino gli stessi.
 
-- **PDF unico**: tutte le righe, un modulo (pagina) ogni 10 righe.
-- **ZIP**: un modulo separato per ciascun lavoratore.
+Ogni lavoratore ha il proprio modulo, con una riga per ciascun periodo di giorni consecutivi:
+
+- **PDF unico**: un solo file con un modulo (pagina) per lavoratore.
+- **ZIP**: un file PDF separato per ciascun lavoratore.
 
 ## Dati salvati
 

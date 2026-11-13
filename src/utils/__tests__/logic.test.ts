@@ -160,26 +160,35 @@ describe('PDF sul modello ministeriale', () => {
   const P = 'moduloIntermittenti[0].Campi[0].';
 
   it('compila datore di lavoro e righe nei campi ufficiali', async () => {
-    const { pagine, campi } = await valori(await generaPdfUnico(modello, employer, [lavoratore(1), lavoratore(2)]));
+    const { pagine, campi } = await valori(await generaPdfUnico(modello, employer, [lavoratore(1)]));
     expect(pagine).toBe(1);
     expect(campi.get(`${P}CFdatorelavoro[0]`)).toBe('05024410267');
     expect(campi.get(`${P}EMmail[0]`)).toBe('prova@example.it');
-    expect(campi.get(`${P}Table1[0].Row2[0].CFlavoratore2[0]`)).toBe('CF00000000000002');
-    expect(campi.get(`${P}Table1[0].Row2[0].DTdatainizio2[0]`)).toBe('14/11/2026');
-    expect(campi.get(`${P}Table1[0].Row2[0].DTdatafine2[0]`)).toBe('15/11/2026');
-    expect(campi.get(`${P}Table1[0].Row2[0].CCcodcomunicazione2[0]`)).toBe('');
-    expect(campi.get(`${P}Table1[0].Row3[0].CFlavoratore3[0]`)).toBe('');
+    expect(campi.get(`${P}Table1[0].Row1[0].CFlavoratore1[0]`)).toBe('CF00000000000001');
+    expect(campi.get(`${P}Table1[0].Row1[0].DTdatainizio1[0]`)).toBe('14/11/2026');
+    expect(campi.get(`${P}Table1[0].Row1[0].DTdatafine1[0]`)).toBe('15/11/2026');
+    expect(campi.get(`${P}Table1[0].Row1[0].CCcodcomunicazione1[0]`)).toBe('');
+    expect(campi.get(`${P}Table1[0].Row2[0].CFlavoratore2[0]`)).toBe('');
   });
 
-  it('apre un nuovo modulo ogni 10 righe senza mescolare i valori', async () => {
-    const lavoratori = Array.from({ length: 23 }, (_, i) => lavoratore(i + 1));
-    const { pagine, campi } = await valori(await generaPdfUnico(modello, employer, lavoratori));
+  it('crea un modulo per lavoratore senza mescolare i valori', async () => {
+    const { pagine, campi } = await valori(await generaPdfUnico(modello, employer, [lavoratore(1), lavoratore(2), lavoratore(3)]));
     expect(pagine).toBe(3);
     expect(campi.get(`${P}Table1[0].Row1[0].CFlavoratore1[0]`)).toBe('CF00000000000001');
-    expect(campi.get(`${P}Table1[0].Row1[0].CFlavoratore1[0]#2`)).toBe('CF00000000000011');
-    expect(campi.get(`${P}Table1[0].Row3[0].CFlavoratore3[0]#3`)).toBe('CF00000000000023');
-    expect(campi.get(`${P}Table1[0].Row4[0].CFlavoratore4[0]#3`)).toBe('');
+    expect(campi.get(`${P}Table1[0].Row1[0].CFlavoratore1[0]#2`)).toBe('CF00000000000002');
+    expect(campi.get(`${P}Table1[0].Row1[0].CFlavoratore1[0]#3`)).toBe('CF00000000000003');
+    expect(campi.get(`${P}Table1[0].Row2[0].CFlavoratore2[0]#3`)).toBe('');
     expect(campi.get(`${P}CFdatorelavoro[0]#3`)).toBe('05024410267');
+  });
+
+  it('scrive una riga per ogni periodo del lavoratore', async () => {
+    const lav = { codiceFiscale: 'RSSMRA80A01F205X', nominativo: 'X', prestazioni: [{ giorno: 'LUN', data: '09/11/2026' }, { giorno: 'SAB', data: '14/11/2026' }, { giorno: 'DOM', data: '15/11/2026' }] };
+    const { pagine, campi } = await valori(await generaPdfUnico(modello, employer, [lav]));
+    expect(pagine).toBe(1);
+    expect(campi.get(`${P}Table1[0].Row1[0].DTdatafine1[0]`)).toBe('09/11/2026');
+    expect(campi.get(`${P}Table1[0].Row2[0].DTdatainizio2[0]`)).toBe('14/11/2026');
+    expect(campi.get(`${P}Table1[0].Row2[0].DTdatafine2[0]`)).toBe('15/11/2026');
+    expect(campi.get(`${P}Table1[0].Row3[0].CFlavoratore3[0]`)).toBe('');
   });
 
   it('non va in errore con caratteri fuori dall\'alfabeto occidentale', async () => {
