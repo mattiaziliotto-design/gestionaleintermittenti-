@@ -1,8 +1,8 @@
 import { UserSession } from '../types';
 import { loadStoredSession } from './storage';
 
-// Durata massima della sessione salvata nel browser
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+// Durata massima della sessione salvata nel browser: 12 ore, poi serve un nuovo accesso
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 const GOOGLE_ISSUERS = ['accounts.google.com', 'https://accounts.google.com'];
 const DOMINIO_AZIENDALE = '@bertifood.it';
 

@@ -59,6 +59,16 @@ export default function App() {
     saveEmployer(employer);
   }, [employer]);
 
+  // Chiude la sessione alla scadenza anche se la pagina resta aperta
+  const isLoggedIn = session !== null;
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const timer = setInterval(() => {
+      if (!restoreSession()) setSession(null);
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [isLoggedIn]);
+
   // Rilascia l'Object URL dell'anteprima quando viene sostituito o chiuso
   const previewUrl = preview?.url ?? null;
   useEffect(() => {

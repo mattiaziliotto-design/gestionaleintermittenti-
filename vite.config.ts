@@ -12,5 +12,7 @@ const securityHeaders: Record<string, string> = Object.fromEntries(
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Nessun file incorporato come "data:" nel CSS: la Content-Security-Policy ammette solo file del sito
+  build: { assetsInlineLimit: 0 },
   preview: { headers: securityHeaders },
 });

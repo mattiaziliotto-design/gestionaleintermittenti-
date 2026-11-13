@@ -43,7 +43,7 @@ computer o browser diversi: per conservarli o trasferirli si usa "Esporta Backup
 ## Sicurezza
 
 - L'accesso richiede un account Google del dominio `@bertifood.it` o presente in `VITE_ALLOWED_EMAILS`;
-  la sessione dura 7 giorni.
+  la sessione dura 12 ore.
 - `vercel.json` imposta Content-Security-Policy e le altre intestazioni di sicurezza.
 - Il controllo dell'accesso avviene nel browser, perché non esiste un server: limita l'uso
   dell'interfaccia ma non sostituisce una protezione lato server.
