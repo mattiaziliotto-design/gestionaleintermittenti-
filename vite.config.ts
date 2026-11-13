@@ -1,22 +1,16 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
-import {defineConfig} from 'vite';
+import { readFileSync } from 'node:fs';
+import { defineConfig } from 'vite';
 
-export default defineConfig(() => {
-  return {
-    plugins: [react(), tailwindcss()],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
-    },
-    server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
-    },
-  };
+// Le intestazioni di sicurezza di produzione (vercel.json) vengono applicate anche a `npm run preview`,
+// così da poterle provare in locale prima della pubblicazione
+const vercel = JSON.parse(readFileSync(new URL('./vercel.json', import.meta.url), 'utf-8'));
+const securityHeaders: Record<string, string> = Object.fromEntries(
+  vercel.headers[0].headers.map((h: { key: string; value: string }) => [h.key, h.value])
+);
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  preview: { headers: securityHeaders },
 });

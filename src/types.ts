@@ -11,13 +11,15 @@ export interface InputRow {
   rigaOriginale?: number;
 }
 
+export interface Prestazione {
+  giorno: string; // "SAB"
+  data: string; // "DD/MM/YYYY"
+}
+
 export interface LavoratoreRaggruppato {
   codiceFiscale: string;
   nominativo: string;
-  prestazioni: {
-    giorno: string; // "SAB"
-    data: string; // "DD/MM/YYYY"
-  }[];
+  prestazioni: Prestazione[];
 }
 
 export interface ElaborazioneStorica {
@@ -36,7 +38,6 @@ export interface UserSession {
   email: string;
   name: string;
   picture?: string;
-  provider: 'google' | 'demo';
+  provider: 'google';
   loggedInAt: string;
 }
-
